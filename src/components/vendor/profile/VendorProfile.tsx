@@ -34,15 +34,15 @@ const VendorProfile = () => {
   const navigate = useNavigate();
   
  
-  const { mutate: uploadImage, isLoading: isUploadingImage } = useUploadImageMutation();
-  const { mutate: changePassword, isLoading: isChangingPass } = useVendorChangePassword();
-  const { mutate: updateDetails, isLoading: isUpdating } = useUpdateVendorDetailsMutation();
+  const { mutate: uploadImage, isPending: isUploadingImage } = useUploadImageMutation();
+  const { mutate: changePassword, isPending: isChangingPass } = useVendorChangePassword();
+  const { mutate: updateDetails, isPending: isUpdating } = useUpdateVendorDetailsMutation();
 
   const [profileData, setProfileData] = useState({
     name: vendor?.name || '',
     phone: vendor?.phone || '',
     about: vendor?.about || '',
-    idProof:vendor.idProof
+    idProof:vendor?.idProof
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -65,9 +65,9 @@ const VendorProfile = () => {
 
     
     setProfileData({
-      name: vendor.name || '',
-      phone: vendor.phone || '',
-      about: vendor.about || '',
+      name: vendor?.name || '',
+      phone: vendor?.phone || '',
+      about: vendor?.about || '',
       
     });
 

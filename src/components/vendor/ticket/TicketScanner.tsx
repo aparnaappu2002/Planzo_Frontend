@@ -7,7 +7,7 @@ import { useVerifyTicket } from '@/hooks/vendorCustomHooks';
 
 const TicketScanner: React.FC = () => {
     const [scannerInitialized, setScannerInitialized] = useState(false);
-    const { mutate: verifyTicket, isLoading, error, data } = useVerifyTicket();
+    const { mutate: verifyTicket, isPending, error, data } = useVerifyTicket();
 
     useEffect(() => {
         const scanner = new Html5QrcodeScanner(
