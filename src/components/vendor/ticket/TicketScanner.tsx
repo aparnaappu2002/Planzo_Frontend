@@ -48,7 +48,7 @@ const TicketScanner: React.FC = () => {
                         }
                     );
                 } catch (error) {
-                    toast.error('Invalid QR code: ' + error.message, {
+                    toast.error('Invalid QR code: ' + (error as Error).message, {
                         position: 'top-center',
                         theme: 'colored',
                         style: { backgroundColor: '#fef08a' },

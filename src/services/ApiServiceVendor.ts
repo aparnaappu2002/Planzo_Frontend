@@ -1,7 +1,7 @@
 import { boolean, email, number } from 'zod'
 import axios from '../axios/vendorAxios'
 import clodAxios,{ isAxiosError } from 'axios'
-import { EventType } from 'react-hook-form'
+import { EventEntity } from '@/types/EventType'
 import { EventUpdateEntity } from '@/types/EventUpdateEntity'
 import { WorkSamplesEntity } from '@/types/WorkSampleEntity'
 
@@ -134,7 +134,7 @@ export const changePasswordVendor = async (userId: string, newPassword: string, 
     }
 }
 
-export const createEvent = async (event: EventType, vendorId: string) => {
+export const createEvent = async (event: EventEntity, vendorId: string) => {
     try {
         const response = await axios.post(`/createEvent/${vendorId}`, { event })
         return response.data

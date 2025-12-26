@@ -584,7 +584,7 @@ const VendorServicesPage: React.FC = () => {
                   <button
                     type="submit"
                     className="px-4 py-2 bg-yellow-400 text-white rounded-lg hover:bg-yellow-500 transition-colors"
-                    disabled={createServiceMutation.isLoading || editServiceMutation.isLoading || !vendorId || isLoadingCategories}
+                    disabled={createServiceMutation.isPending || editServiceMutation.isPending || !vendorId || isLoadingCategories}
                   >
                     {editingService ? 'Update' : 'Create'}
                   </button>

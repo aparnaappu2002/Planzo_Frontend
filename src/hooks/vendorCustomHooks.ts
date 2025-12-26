@@ -4,7 +4,6 @@ import { vendorSignup,verifyOtpVendor,vendorLogin,resendOtpVendor,
 findServiceForVendor,editServiceVendor,changeStatusService,createServiceVendor,fetchCategoryCategoryForService,approveBookingVendor,rejectBooking,updateBookingAsComplete,
 showBookingsInVendor,loadChatsVendor,loadPreviousChatVendor,verifyTicket,findTransactionsByPaymentStatus} from "@/services/ApiServiceVendor";
 import {useInfiniteQuery,useMutation , useQuery} from '@tanstack/react-query'
-import { email } from "zod";
 import { EventEntity } from "@/types/EventType";
 import { EventUpdateEntity } from "@/types/EventUpdateEntity";
 import { WorkSamplesEntity } from "@/types/WorkSampleEntity";
