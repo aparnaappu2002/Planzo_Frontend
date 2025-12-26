@@ -72,7 +72,7 @@ const TicketScanner: React.FC = () => {
             <h1 className="text-3xl font-bold text-yellow-800 mb-6">Ticket Scanner</h1>
             <div className="bg-yellow-200 p-6 rounded-lg shadow-lg w-full max-w-md">
                 <div id="qr-reader" className="w-full"></div>
-                {isLoading && (
+                {isPending && (
                     <p className="text-yellow-800 mt-4 text-center">Verifying ticket...</p>
                 )}
                 {error && (
