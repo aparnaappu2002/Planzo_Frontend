@@ -6,8 +6,5 @@ export default io(BASEURL, {
   withCredentials: true, 
   autoConnect: true,
   transports: ['polling'], 
-  upgrade: false, // 
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
+  upgrade: false, 
 })
