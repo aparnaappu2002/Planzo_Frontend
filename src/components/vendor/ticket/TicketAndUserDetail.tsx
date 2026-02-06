@@ -1,30 +1,104 @@
 import { useState } from "react";
-import { useTicketDetailsWithUser } from "@/hooks/vendorCustomHooks";
+import { useTicketDetailsWithUser, useSearchTicketsVendor, useFilterTicketsVendor } from "@/hooks/vendorCustomHooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Ticket, Eye, Calendar, MapPin, User, CreditCard, QrCode, RefreshCw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Search, Ticket, Eye, Calendar, MapPin, User, CreditCard, QrCode, RefreshCw, Filter, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { TicketAndUserDTO } from "@/types/TicketAndUserDTO";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/Store";
 import Pagination from "@/components/other components/Pagination";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const TicketAndUserDetails: React.FC = () => {
   const vendorId = useSelector((state: RootState) => state.vendorSlice.vendor?._id);
   const [pageNo, setPageNo] = useState(1);
   const [selectedTicket, setSelectedTicket] = useState<TicketAndUserDTO | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'successful' | 'failed' | 'all'>('all');
+  const [ticketStatus, setTicketStatus] = useState<'used' | 'refunded' | 'unused' | 'all'>('all');
   const navigate = useNavigate();
-  const { data, isLoading, error, refetch } = useTicketDetailsWithUser(vendorId || '', pageNo);
-  console.log("Ticket Data:",data)
+
+  // Debounce search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Determine which query to use based on active filters
+  const isSearchActive = debouncedSearchTerm.trim().length > 0;
+  const isFilterActive = paymentStatus !== 'all' || ticketStatus !== 'all';
+
+  // Search query
+  const { 
+    data: searchData, 
+    isLoading: isSearchLoading, 
+    error: searchError 
+  } = useSearchTicketsVendor({
+    vendorId: vendorId || '',
+    searchTerm: debouncedSearchTerm,
+    pageNo
+  });
+
+  // Filter query
+  const { 
+    data: filterData, 
+    isLoading: isFilterLoading, 
+    error: filterError 
+  } = useFilterTicketsVendor({
+    vendorId: vendorId || '',
+    pageNo,
+    paymentStatus: paymentStatus !== 'all' ? paymentStatus : undefined,
+    ticketStatus: ticketStatus !== 'all' ? ticketStatus : undefined
+  });
+
+  // Default query (all tickets)
+  const { 
+    data: allData, 
+    isLoading: isAllLoading, 
+    error: allError, 
+    refetch 
+  } = useTicketDetailsWithUser(vendorId || '', pageNo);
+
+  // Determine which data to use
+  let data, isLoading, error;
+  
+  if (isSearchActive) {
+    data = searchData;
+    isLoading = isSearchLoading;
+    error = searchError;
+  } else if (isFilterActive) {
+    data = filterData;
+    isLoading = isFilterLoading;
+    error = filterError;
+  } else {
+    data = allData;
+    isLoading = isAllLoading;
+    error = allError;
+  }
+
+  console.log("Ticket Data:", data);
  
   // Extract tickets and totalPages from the response
   const tickets = data?.ticketAndEventDetails || [];
   const totalPages = data?.totalPages || 0;
+
+  // Reset to page 1 when search term or filters change
+  useState(() => {
+    setPageNo(1);
+  }, [debouncedSearchTerm, paymentStatus, ticketStatus]);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setPaymentStatus('all');
+    setTicketStatus('all');
+    setPageNo(1);
+  };
+
+  const hasActiveFilters = searchTerm || paymentStatus !== 'all' || ticketStatus !== 'all';
  
   const handleSearch = () => {
     if (!vendorId?.trim()) {
@@ -33,9 +107,11 @@ const TicketAndUserDetails: React.FC = () => {
     }
     refetch();
   };
+
   const handleScanTicket = (ticketId: string, eventId: string) => {
     navigate(`/vendor/scanTickets?ticketId=${ticketId}&eventId=${eventId}`);
   };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'successful':
@@ -74,6 +150,95 @@ const TicketAndUserDetails: React.FC = () => {
             </h1>
           </div>
         </div>
+
+        {/* Search and Filters */}
+        <Card className="p-4 sm:p-6 mb-6 border-yellow-400/20 bg-yellow-200/10">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-yellow-600" />
+                <Input
+                  placeholder="Search by event title..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-yellow-400/30 focus:border-yellow-500"
+                />
+              </div>
+
+              {/* Payment Status Filter */}
+              <div className="w-full sm:w-48">
+                <Select
+                  value={paymentStatus}
+                  onValueChange={(value) => setPaymentStatus(value as any)}
+                >
+                  <SelectTrigger className="border-yellow-400/30">
+                    <SelectValue placeholder="Payment Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="successful">Successful</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Ticket Status Filter */}
+              <div className="w-full sm:w-48">
+                <Select
+                  value={ticketStatus}
+                  onValueChange={(value) => setTicketStatus(value as any)}
+                >
+                  <SelectTrigger className="border-yellow-400/30">
+                    <SelectValue placeholder="Ticket Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tickets</SelectItem>
+                    <SelectItem value="unused">Unused</SelectItem>
+                    <SelectItem value="used">Used</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={handleClearFilters}
+                  className="border-yellow-500 text-yellow-800 hover:bg-yellow-300 w-full sm:w-auto"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+              )}
+            </div>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-yellow-700 font-medium">Active filters:</span>
+                {searchTerm && (
+                  <Badge variant="secondary" className="bg-yellow-200 text-yellow-800">
+                    Search: {searchTerm}
+                  </Badge>
+                )}
+                {paymentStatus !== 'all' && (
+                  <Badge variant="secondary" className="bg-yellow-200 text-yellow-800">
+                    Payment: {paymentStatus}
+                  </Badge>
+                )}
+                {ticketStatus !== 'all' && (
+                  <Badge variant="secondary" className="bg-yellow-200 text-yellow-800">
+                    Ticket: {ticketStatus}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </Card>
+
         {/* Content */}
         {isLoading && (
           <div className="flex items-center justify-center py-12">
@@ -83,6 +248,7 @@ const TicketAndUserDetails: React.FC = () => {
             </div>
           </div>
         )}
+
         {error && (
           <Card className="p-6 border-yellow-400/20 bg-yellow-200/20">
             <div className="text-center space-y-2">
@@ -98,11 +264,12 @@ const TicketAndUserDetails: React.FC = () => {
             </div>
           </Card>
         )}
+
         {tickets && tickets.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl sm:text-2xl font-semibold text-yellow-800">
-                Ticket Details ({tickets.length} found)
+                Ticket Details ({tickets.length} {hasActiveFilters ? 'filtered' : 'total'})
               </h2>
             </div>
            
@@ -121,7 +288,7 @@ const TicketAndUserDetails: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tickets.map((ticket:TicketAndUserDTO) => (
+                    {tickets.map((ticket: TicketAndUserDTO) => (
                       <TableRow key={ticket._id} className="border-yellow-400/5">
                         <TableCell className="font-medium text-yellow-900">{ticket.ticketId}</TableCell>
                         <TableCell className="hidden sm:table-cell">
@@ -323,24 +490,39 @@ const TicketAndUserDetails: React.FC = () => {
                 </Table>
               </div>
             </Card>
+
             {/* Pagination Component */}
-            <div className="mt-8">
-              <Pagination
-                total={totalPages}
-                current={pageNo}
-                setPage={setPageNo}
-              />
-            </div>
+            {totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  total={totalPages}
+                  current={pageNo}
+                  setPage={setPageNo}
+                />
+              </div>
+            )}
           </div>
         )}
+
         {tickets && tickets.length === 0 && !isLoading && (
           <Card className="p-8 text-center border-yellow-400/20 bg-yellow-200/10">
             <div className="space-y-3">
               <Ticket className="h-12 w-12 mx-auto text-yellow-700" />
               <h3 className="text-lg font-medium text-yellow-800">No tickets found</h3>
               <p className="text-yellow-700">
-                No tickets found for your events. Check back later or create some events first.
+                {hasActiveFilters 
+                  ? 'No tickets match your search or filter criteria. Try adjusting your filters.'
+                  : 'No tickets found for your events. Check back later or create some events first.'}
               </p>
+              {hasActiveFilters && (
+                <Button
+                  onClick={handleClearFilters}
+                  variant="outline"
+                  className="mt-4 border-yellow-500 text-yellow-800 hover:bg-yellow-300"
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </Card>
         )}
@@ -348,4 +530,5 @@ const TicketAndUserDetails: React.FC = () => {
     </div>
   );
 };
+
 export default TicketAndUserDetails;

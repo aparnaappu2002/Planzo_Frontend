@@ -60,7 +60,14 @@ const CategoryManagement: React.FC = () => {
       setIsFormModalOpen(false);
       refetch();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Category creation failed");
+      let errorMessage = "Category creation failed.";
+      
+      if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    toast.error(errorMessage); 
+    
     }
   };
 
@@ -72,7 +79,13 @@ const CategoryManagement: React.FC = () => {
       setSelectedCategory(null);
       refetch();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update category");
+      let errorMessage = "Failed to update category.";
+      
+      if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    
+    toast.error(errorMessage); 
     }
   };
 
