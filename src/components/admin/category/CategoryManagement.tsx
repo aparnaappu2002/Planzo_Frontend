@@ -164,7 +164,7 @@ const CategoryManagement: React.FC = () => {
                   className="pl-10"
                 />
               </div>
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={() => refetch()}
                 disabled={isPending}
@@ -172,7 +172,7 @@ const CategoryManagement: React.FC = () => {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isPending ? 'animate-spin' : ''}`} />
                 Refresh
-              </Button>
+              </Button> */}
             </div>
           </CardContent>
         </Card>
