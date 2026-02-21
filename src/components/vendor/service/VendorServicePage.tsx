@@ -161,6 +161,8 @@ const VendorServicesPage: React.FC = () => {
         toast.success('Service updated successfully');
       } else {
         await createServiceMutation.mutateAsync({ ...formData, vendorId });
+        renderContent();
+
         toast.success('Service created successfully');
       }
       
