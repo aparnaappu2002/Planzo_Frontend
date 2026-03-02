@@ -156,35 +156,47 @@ const VendorServicesPage: React.FC = () => {
     }
 
     try {
-      if (editingService) {
-        await editServiceMutation.mutateAsync({ service: { ...formData, vendorId }, serviceId: editingService._id! });
-        toast.success('Service updated successfully');
-      } else {
-        await createServiceMutation.mutateAsync({ ...formData, vendorId });
-        renderContent();
+  if (editingService) {
+    await editServiceMutation.mutateAsync({ 
+      service: { ...formData, vendorId }, 
+      serviceId: editingService._id! 
+    });
+    toast.success('Service updated successfully');
+  } else {
+    await createServiceMutation.mutateAsync({ ...formData, vendorId });
+    toast.success('Service created successfully');
 
-        toast.success('Service created successfully');
-      }
-      
-      await queryClient.invalidateQueries({ queryKey: ['services', vendorId] });
-      await queryClient.invalidateQueries({ queryKey: ['services', 'search', vendorId] });
+    // ← NEW: Go back to page 1 so the newly created service is visible
+    setPageNo(1);
+  }
 
-      setIsModalOpen(false);
-      setFormData({
-        serviceTitle: '',
-        yearsOfExperience: 0,
-        serviceDescription: '',
-        cancellationPolicy: '',
-        termsAndCondition: '',
-        serviceDuration: '',
-        servicePrice: 0,
-        additionalHourFee: 0,
-        status: 'active',
-        categoryId: '',
-      });
-      setErrorMessage(null);
-      setFieldErrors({});
-    } catch (err: any) {
+  // ✅ FIXED: Use the exact same query keys that your hooks use
+  await queryClient.invalidateQueries({
+    queryKey: ['services-in-vendor', vendorId],
+    exact: false
+  });
+
+  await queryClient.invalidateQueries({
+    queryKey: ['services-search-vendor', vendorId],
+    exact: false
+  });
+
+  setIsModalOpen(false);
+  setFormData({
+    serviceTitle: '',
+    yearsOfExperience: 0,
+    serviceDescription: '',
+    cancellationPolicy: '',
+    termsAndCondition: '',
+    serviceDuration: '',
+    servicePrice: 0,
+    additionalHourFee: 0,
+    status: 'active',
+    categoryId: '',
+  });
+  setErrorMessage(null);
+  setFieldErrors({});
+} catch (err: any) {
       console.error('Error saving service:', err);
       if (err.errors) {
         const newFieldErrors: Record<string, string> = {};

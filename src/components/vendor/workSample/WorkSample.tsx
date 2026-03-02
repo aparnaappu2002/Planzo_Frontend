@@ -4,6 +4,7 @@ import { WorkSamplesEntity } from '@/types/WorkSampleEntity';
 import { RootState } from '@/redux/Store';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface WorkSamplesResponse {
   message: string;
@@ -19,6 +20,7 @@ const WorkSamplesPage: React.FC = () => {
     images: [],
   });
 
+  const queryClient = useQueryClient();
   const vendorId = useSelector((state: RootState) => state.vendorSlice.vendor?._id);
   const { mutate: createWorkSample, isPending: isCreating } = useCreateWorkSample();
   const { data: workSamplesResponse, isLoading: isLoadingSamples } = useFindWorkSamples(vendorId || '', pageNo);
@@ -106,31 +108,37 @@ const WorkSamplesPage: React.FC = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vendorId) {
-      toast.error('Vendor ID not found. Please log in.');
-      return;
-    }
+  // Handle form submission
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!vendorId) {
+    toast.error('Vendor ID not found. Please log in.');
+    return;
+  }
 
-    if (formData.images.length === 0) {
-      toast.error('Please upload at least one image.');
-      return;
-    }
+  if (formData.images.length === 0) {
+    toast.error('Please upload at least one image.');
+    return;
+  }
 
-    createWorkSample(
-      { ...formData, vendorId },
-      {
-        onSuccess: () => {
-          setFormData({ title: '', description: '', images: [] });
-          toast.success('Work sample created successfully!');
-        },
-        onError: (error: any) => {
-          toast.error('Failed to create work sample: ' + (error.message || 'Unknown error'));
-        },
-      }
-    );
-  };
+  createWorkSample(
+    { ...formData, vendorId },
+    {
+      onSuccess: () => {
+  setFormData({ title: '', description: '', images: [] });
+  toast.success('Work sample created successfully!');
+
+  setPageNo(1);
+
+  // TEMPORARY BROAD INVALIDATE (forces everything to refresh)
+  queryClient.invalidateQueries();   // ← no queryKey = refreshes ALL queries
+},
+      onError: (error: any) => {
+        toast.error('Failed to create work sample: ' + (error.message || 'Unknown error'));
+      },
+    }
+  );
+};
 
   // Check if vendorId exists
   if (!vendorId) {
